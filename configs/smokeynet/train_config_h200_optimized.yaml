@@ -1,0 +1,118 @@
+# Sacred SmokeyNet Training Configuration - H200 + Memory Cache Optimized
+# Conciliación divina: mantiene especificaciones sagradas + optimización hardware real
+
+# Sacred model architecture (MANTENER EXACTO)
+model:
+  num_tiles: 45          # ✅ Sacred specification
+  temporal_window: 3     # ✅ Sacred specification (L=3)
+  tile_size: 224         # ✅ Sacred specification
+  vit_dim: 768          # ✅ Sacred specification  
+  vit_depth: 6          # ✅ Sacred specification (6-8 blocks)
+  vit_heads: 12         # ✅ Sacred specification
+  use_tile_heads: true  # ✅ Sacred auxiliary heads
+
+# Sacred training parameters (MANTENER EXACTO)
+training:
+  learning_rate: 2e-4     # ✅ Sacred specification
+  weight_decay: 0.05      # ✅ Sacred specification
+  max_epochs: 70          # ✅ Sacred range 60-80
+  global_loss_weight: 1.0 # ✅ Sacred specification
+  tile_loss_weight: 0.3   # ✅ Sacred specification
+  warmup_epochs: 5        # ✅ Sacred specification
+  gradient_clip_val: 1.0  # ✅ Sacred specification
+  precision: "bf16-mixed" # ✅ Sacred: BF16/FP16 (H200 native support)
+  
+  # 🔧 H200 OPTIMIZATION (hardware adaptation)
+  batch_size: 10          # vs sacred 4 (aprovecha 143GB VRAM H200)
+  accumulate_grad_batches: 6  # vs sacred 16 (BS_eff=60, cerca del sagrado 64)
+
+# 🔧 H200 + Memory Cache Dataset Configuration
+data:
+  # Memory cache paths (ultra-fast /dev/shm)
+  cache_dir: "/dev/shm/sai_cache/figlib_processed"
+  use_memory_cache: true
+  preload_all: false      # Conservative for 119GB available
+  max_cache_size_gb: 40   # Conservative limit
+  
+  # 🔧 H200 OPTIMIZATION (192 cores + 258GB RAM)
+  batch_size: 10          # Match training batch_size
+  num_workers: 16         # vs sacred 8 (aprovecha 192 CPU cores)
+  pin_memory: true        # ✅ Sacred + abundant RAM
+  persistent_workers: true # ✅ Keep workers in 258GB RAM
+  prefetch_factor: 4      # ✅ Optimized for abundant RAM
+  
+  # ✅ Sacred specifications (unchanged)
+  temporal_window: 3      # Sacred L=3
+  tile_size: 224         # Sacred specification
+  num_tiles: 45          # Sacred specification
+
+# ✅ Sacred objectives (MANTENER EXACTO)
+objectives:
+  target_recall: 0.80     # ✅ Sacred: Recall ≥ 0.80
+  target_f1: 0.826        # ✅ Sacred: F1 ≈ 82.6%
+  target_ttd: 4.0         # ✅ Sacred: TTD ≤ 4 min
+
+# Logging and checkpoints (mantener sacred)
+logging:
+  project_name: "sai-net-verificador-h200"
+  experiment_name: "smokeynet-like-h200-memory-optimized"
+  log_every_n_steps: 10
+  
+checkpoints:
+  monitor: "val/f1"       # ✅ Sacred priority metric
+  mode: "max"
+  save_top_k: 3
+  save_last: true
+  filename: "smokeynet-h200-epoch{epoch:02d}-f1{val/f1:.4f}"
+  dirpath: "outputs/smokeynet/checkpoints"
+
+# Early stopping based on sacred objectives  
+early_stopping:
+  monitor: "val/f1"       # ✅ Sacred metric
+  patience: 15
+  min_delta: 0.001
+  mode: "max"
+
+# 🔧 H200 Hardware Configuration (adapted from 2×A100)
+trainer:
+  devices: 1              # vs sacred 2 (hardware real: 1×H200)
+  strategy: "auto"        # vs sacred "ddp" (no DDP needed)
+  accelerator: "gpu"      # ✅ Sacred
+  sync_batchnorm: false   # vs sacred true (innecesario single GPU)
+  
+  # H200 Performance optimizations
+  compile: false          # Disable for stability initially
+  enable_checkpointing: false  # Sufficient VRAM without gradient checkpointing
+
+# Validation and testing (mantener sacred)
+validation:
+  check_val_every_n_epoch: 1
+  val_check_interval: 1.0
+
+# ✅ Sacred reproducibility
+seed: 42
+
+# Memory cache management
+cache:
+  cleanup_on_start: false  # Keep existing cache
+  verify_cache: true      # Verify cache integrity
+  compression_level: 6    # Balanced compression
+  
+# Model export (sacred pipeline)
+export:
+  formats: ["onnx", "torchscript"]  # ✅ Sacred: ONNX/TensorRT pipeline
+  optimize_for_inference: true
+  export_dir: "outputs/smokeynet/exported"
+
+# Performance monitoring
+monitoring:
+  log_gpu_memory: true
+  log_cache_stats: true
+  log_system_stats: true
+  profile_dataloader: false  # Enable for debugging only
+
+# System resource limits (safety)
+limits:
+  max_memory_gb: 100      # Conservative limit for /dev/shm usage
+  max_vram_gb: 130        # Conservative limit for H200 (143GB total)
+  worker_memory_gb: 4     # Per worker memory limit

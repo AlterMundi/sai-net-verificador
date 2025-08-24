@@ -1,0 +1,32 @@
+# HPWREN Camera IDs for FIgLib dataset
+# Based on the ~101 cameras from 30 stations in Southern California
+# From the sacred documentation: cameras from HPWREN network
+
+# Mount Laguna Observatory area
+mlo-n-mobo-c
+mlo-s-mobo-c
+mlo-w-mobo-c
+
+# Palomar Observatory area  
+po-n-mobo-c
+po-s-mobo-c
+po-e-mobo-c
+
+# Rockhouse Fire Station
+rh-n-mobo-c
+rh-s-mobo-c
+rh-w-mobo-c
+
+# Bernardo Fire Station
+bf-n-mobo-c
+bf-s-mobo-c
+bf-e-mobo-c
+
+# Lake Poway
+lp-n-mobo-c
+lp-s-mobo-c
+lp-w-mobo-c
+
+# Example additional cameras (add real ones as per HPWREN directory)
+# This is a placeholder - real implementation needs actual camera IDs
+# from HPWREN network for the 315 fire sequences mentioned in documentation

@@ -1,0 +1,84 @@
+# Sacred SmokeyNet Training Configuration
+# Following exact specifications from divine documentation
+
+# Sacred model architecture
+model:
+  num_tiles: 45          # Sacred specification
+  temporal_window: 3     # Sacred specification (L=3)
+  tile_size: 224         # Sacred specification
+  vit_dim: 768          # Sacred specification  
+  vit_depth: 6          # Sacred specification (6-8 blocks)
+  vit_heads: 12         # Sacred specification
+  use_tile_heads: true  # Auxiliary heads for regularization
+
+# Sacred training parameters
+training:
+  learning_rate: 2e-4     # Sacred specification
+  weight_decay: 0.05      # Sacred specification
+  max_epochs: 70          # Sacred range 60-80
+  global_loss_weight: 1.0 # Sacred specification
+  tile_loss_weight: 0.3   # Sacred specification
+  warmup_epochs: 5
+  
+  # Sacred batch configuration
+  batch_size: 4           # Sacred: 4-8 per GPU due to memory constraints
+  accumulate_grad_batches: 16  # To achieve BS_eff≈64 (4*16=64)
+  
+  # Sacred precision and clipping
+  precision: "bf16-mixed" # Sacred: BF16/FP16
+  gradient_clip_val: 1.0  # Sacred specification
+  
+# Dataset configuration
+data:
+  data_root: "data/figlib_seq"
+  num_workers: 8
+  pin_memory: true
+  temporal_window: 3      # Sacred L=3
+  tile_size: 224         # Sacred specification
+  num_tiles: 45          # Sacred specification
+
+# Sacred objectives and validation
+objectives:
+  target_recall: 0.80     # Sacred: Recall ≥ 0.80
+  target_f1: 0.826        # Sacred: F1 ≈ 82.6%
+  target_ttd: 4.0         # Sacred: TTD ≤ 4 min
+  
+# Logging and checkpoints
+logging:
+  project_name: "sai-net-verificador"
+  experiment_name: "smokeynet-like-sacred"
+  log_every_n_steps: 10
+  
+checkpoints:
+  monitor: "val/f1"       # Sacred priority metric
+  mode: "max"
+  save_top_k: 3
+  save_last: true
+  filename: "smokeynet-epoch{epoch:02d}-f1{val/f1:.4f}"
+
+# Early stopping based on sacred objectives  
+early_stopping:
+  monitor: "val/f1"       # Sacred metric
+  patience: 15
+  min_delta: 0.001
+  mode: "max"
+
+# Sacred hardware configuration
+trainer:
+  devices: 2              # Sacred: 2× A100 GPUs
+  strategy: "ddp"         # Sacred: DDP distributed training
+  accelerator: "gpu"
+  sync_batchnorm: true
+  
+# Validation and testing
+validation:
+  check_val_every_n_epoch: 1
+  val_check_interval: 1.0
+
+# Sacred reproducibility
+seed: 42
+
+# Model export (for production inference)
+export:
+  formats: ["onnx", "torchscript"]  # Sacred: ONNX/TensorRT pipeline
+  optimize_for_inference: true

@@ -1,0 +1,160 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Data directories (large datasets)
+data/raw/
+data/yolo/
+data/figlib_seq/
+data/processed/
+*.zip
+*.tar.gz
+*.tgz
+*.tar
+*.rar
+*.7z
+
+# Model outputs and checkpoints
+outputs/
+checkpoints/
+*.pt
+*.pth
+*.onnx
+*.engine
+*.plan
+runs/
+wandb/
+mlruns/
+lightning_logs/
+
+# Dataset files
+*.jpg
+*.jpeg
+*.png
+*.tiff
+*.tif
+*.bmp
+*.gif
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Large files
+*.hdf5
+*.h5
+*.pkl
+*.pickle
+*.npy
+*.npz
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.out
+*.err
+*~
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+
+# PyTorch specific
+*.pth.tar
+
+# Weights & Biases
+wandb/
+
+# MLflow
+mlruns/
+
+# TensorBoard
+runs/
+logs/
+
+# Cache directories
+.cache/
+cache/
+
+# Distributed training
+.torch_distributed_*/
+
+# Profiling data
+*.prof
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Configuration files with secrets
+config/secrets.yaml
+config/private.yaml
+*.key
+*.pem
+*.crt
+
+# Backup files
+*.bak
+*.backup

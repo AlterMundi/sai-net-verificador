@@ -1,0 +1,11 @@
+camera_id,ignition_timestamp,event_id
+mlo-n-mobo-c,2020-08-15T14:30:00,event_001_valley_fire
+mlo-s-mobo-c,2020-08-16T16:45:00,event_002_mesa_fire
+po-n-mobo-c,2020-09-10T13:15:00,event_003_ridge_fire
+bf-n-mobo-c,2020-09-12T15:20:00,event_004_canyon_fire
+lp-n-mobo-c,2020-10-05T12:30:00,event_005_brush_fire
+rh-n-mobo-c,2020-10-15T14:45:00,event_006_hill_fire
+po-s-mobo-c,2021-06-20T16:10:00,event_007_oak_fire
+bf-s-mobo-c,2021-07-12T15:30:00,event_008_pine_fire
+lp-s-mobo-c,2021-08-18T13:45:00,event_009_sage_fire
+mlo-w-mobo-c,2021-09-05T14:15:00,event_010_grass_fire
