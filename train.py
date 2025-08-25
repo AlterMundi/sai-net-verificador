@@ -122,8 +122,8 @@ def main(config_path: str):
     # Setup sacred data module
     logger.info("Setting up sacred FIgLib data module...")
     
-    # Use Memory DataModule for H200 optimization if cache_dir is configured
-    if hasattr(config.data, 'cache_dir'):
+    # Use Memory DataModule for H200 optimization if cache_dir is configured  
+    if hasattr(config.data, 'cache_dir') and not getattr(config.data, 'use_real_sequences', False):
         logger.info("Using H200 Memory-Optimized DataModule...")
         from src.dataio.figlib_memory_datamodule import FIgLibMemoryDataModule
         data_module = FIgLibMemoryDataModule(
@@ -141,7 +141,8 @@ def main(config_path: str):
             max_cache_size_gb=config.data.max_cache_size_gb
         )
     else:
-        # Standard DataModule for regular configs
+        # Real Sequences DataModule for sacred L=3 sequences
+        logger.info("Using Real L=3 Sequences DataModule...")
         data_module = FIgLibDataModule(
             data_root=config.data.data_root,
             batch_size=config.training.batch_size,
@@ -149,7 +150,9 @@ def main(config_path: str):
             temporal_window=config.data.temporal_window,
             tile_size=config.data.tile_size,
             num_tiles=config.data.num_tiles,
-            pin_memory=config.data.pin_memory
+            pin_memory=config.data.pin_memory,
+            persistent_workers=getattr(config.data, 'persistent_workers', False),
+            prefetch_factor=getattr(config.data, 'prefetch_factor', 2)
         )
     
     # Print dataset statistics

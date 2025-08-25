@@ -77,6 +77,27 @@ class FIgLibSequenceBuilder:
         df['offset_seconds'] = df['filename'].apply(extract_offset)
         logger.info(f"Extracted offsets range: {df['offset_seconds'].min()} to {df['offset_seconds'].max()} seconds")
         
+        # 🔥 SACRED LABELING RULE from divine documentation (Guia Descarga FigLib.md):
+        # "etiquete como no-smoke los frames con offset negativo y como smoke aquellos con offset ≥ 0"
+        # "cualquier imagen con 'offset_0' o positivo tiene humo"
+        def apply_sacred_labeling(offset_seconds: int) -> int:
+            """Apply sacred temporal labeling based on ignition timing"""
+            if offset_seconds < 0:
+                return 0  # pre-ignition, no smoke visible yet
+            else:
+                return 1  # post-ignition, smoke present
+        
+        # Override existing labels with sacred temporal labeling
+        df['label'] = df['offset_seconds'].apply(apply_sacred_labeling)
+        
+        # Log sacred labeling statistics
+        negative_count = len(df[df['label'] == 0])
+        positive_count = len(df[df['label'] == 1])
+        logger.info(f"🔥 Sacred labeling applied:")
+        logger.info(f"  - Pre-ignition (negative): {negative_count} frames")
+        logger.info(f"  - Post-ignition (positive): {positive_count} frames")
+        logger.info(f"  - Balance ratio: {positive_count / len(df):.3f}")
+        
         return df
     
     def group_by_events(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -172,8 +193,26 @@ class FIgLibSequenceBuilder:
                     # This is relative to the event directory, not the root
                     src_path = self.raw_root / seq['event_id'] / relative_path
                 else:
-                    # Path like: eventname/eventname/file.jpg (relative to root)
-                    src_path = self.raw_root / relative_path
+                    # Path like: eventname/file.jpg (from labels.csv)
+                    # But actual file might be in nested structure: eventname/eventname/file.jpg
+                    basic_path = self.raw_root / relative_path
+                    
+                    # If basic path doesn't exist, try nested structure
+                    if not basic_path.exists():
+                        # Extract filename from relative_path
+                        path_parts = relative_path.split('/')
+                        if len(path_parts) == 2:
+                            event_name, filename = path_parts
+                            # Try nested: eventname/eventname/filename
+                            nested_path = self.raw_root / event_name / event_name / filename
+                            if nested_path.exists():
+                                src_path = nested_path
+                            else:
+                                src_path = basic_path  # Will fail, but log the correct attempted path
+                        else:
+                            src_path = basic_path
+                    else:
+                        src_path = basic_path
                 dst_path = seq_dir / f"frame_{frame_idx:02d}.jpg"
                 
                 # Copy real wildfire image

@@ -277,7 +277,9 @@ class FIgLibDataModule(pl.LightningDataModule):
         temporal_window: int = 3,
         tile_size: int = 224,
         num_tiles: int = 45,
-        pin_memory: bool = True
+        pin_memory: bool = True,
+        persistent_workers: bool = False,
+        prefetch_factor: int = 2
     ):
         super().__init__()
         
@@ -288,6 +290,8 @@ class FIgLibDataModule(pl.LightningDataModule):
         self.tile_size = tile_size
         self.num_tiles = num_tiles
         self.pin_memory = pin_memory
+        self.persistent_workers = persistent_workers
+        self.prefetch_factor = prefetch_factor
         
         # Dataset paths
         self.train_metadata = self.data_root / 'train' / 'sequences_metadata.csv'
@@ -330,35 +334,59 @@ class FIgLibDataModule(pl.LightningDataModule):
             )
     
     def train_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            drop_last=True,
-            persistent_workers=True if self.num_workers > 0 else False
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': True,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory,
+            'drop_last': True
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.train_dataset, **dataloader_kwargs)
     
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            persistent_workers=True if self.num_workers > 0 else False
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': False,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.val_dataset, **dataloader_kwargs)
     
     def test_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.test_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            persistent_workers=True if self.num_workers > 0 else False
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': False,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.test_dataset, **dataloader_kwargs)
     
     def get_dataset_stats(self) -> Dict[str, Any]:
         """Get dataset statistics."""
@@ -384,7 +412,7 @@ class FIgLibDataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     # Test the sacred datamodule
-    data_root = "../../data/figlib_seq"
+    data_root = "../../data/figlib_seq_real"
     
     if Path(data_root).exists():
         dm = FIgLibDataModule(

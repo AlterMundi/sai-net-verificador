@@ -328,38 +328,59 @@ class FIgLibMemoryDataModule(pl.LightningDataModule):
             )
     
     def train_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            drop_last=True,
-            persistent_workers=self.persistent_workers,
-            prefetch_factor=self.prefetch_factor
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': True,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory,
+            'drop_last': True
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.train_dataset, **dataloader_kwargs)
     
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            persistent_workers=self.persistent_workers,
-            prefetch_factor=self.prefetch_factor
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': False,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.val_dataset, **dataloader_kwargs)
     
     def test_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.test_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory,
-            persistent_workers=self.persistent_workers,
-            prefetch_factor=self.prefetch_factor
-        )
+        # Configure dataloader based on num_workers
+        dataloader_kwargs = {
+            'batch_size': self.batch_size,
+            'shuffle': False,
+            'num_workers': self.num_workers,
+            'pin_memory': self.pin_memory
+        }
+        
+        # Only add multiprocessing options if num_workers > 0
+        if self.num_workers > 0:
+            dataloader_kwargs.update({
+                'persistent_workers': self.persistent_workers,
+                'prefetch_factor': self.prefetch_factor
+            })
+        
+        return DataLoader(self.test_dataset, **dataloader_kwargs)
     
     def get_dataset_stats(self) -> Dict[str, Any]:
         """Get comprehensive dataset statistics."""
