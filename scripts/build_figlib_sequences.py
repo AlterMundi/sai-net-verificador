@@ -16,6 +16,7 @@ import csv
 import logging
 from typing import List, Dict, Tuple
 import shutil
+import re
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -44,13 +45,38 @@ class FIgLibSequenceBuilder:
             (self.out_root / split).mkdir(parents=True, exist_ok=True)
     
     def load_global_labels(self) -> pd.DataFrame:
-        """Load global labels CSV from raw dataset."""
+        """Load global labels CSV from real FIgLib dataset."""
         labels_file = self.raw_root / "labels.csv"
         if not labels_file.exists():
             raise FileNotFoundError(f"Labels file not found: {labels_file}")
         
         df = pd.read_csv(labels_file)
+        
+        # Adapt real_figlib format to expected format
+        df = self._adapt_real_figlib_format(df)
+        
         logger.info(f"Loaded {len(df)} image labels from {labels_file}")
+        return df
+    
+    def _adapt_real_figlib_format(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adapt real FIgLib dataset format to expected format."""
+        logger.info("Adapting real FIgLib dataset format...")
+        
+        # Map event_name to event_id
+        df['event_id'] = df['event_name']
+        
+        # Extract offset_seconds from filename pattern: TIMESTAMP_±OFFSET.jpg
+        def extract_offset(filename: str) -> int:
+            match = re.search(r'_([-+]\d+)\.jpg$', filename)
+            if match:
+                return int(match.group(1))
+            else:
+                logger.warning(f"Could not extract offset from filename: {filename}")
+                return 0
+        
+        df['offset_seconds'] = df['filename'].apply(extract_offset)
+        logger.info(f"Extracted offsets range: {df['offset_seconds'].min()} to {df['offset_seconds'].max()} seconds")
+        
         return df
     
     def group_by_events(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -60,7 +86,7 @@ class FIgLibSequenceBuilder:
             # Sort by offset_seconds for proper temporal order
             group_sorted = group.sort_values('offset_seconds')
             events[event_id] = group_sorted
-            logger.info(f"Event {event_id}: {len(group_sorted)} frames")
+            logger.info(f"Event {event_id}: {len(group_sorted)} frames, offset range: {group_sorted['offset_seconds'].min()}s to {group_sorted['offset_seconds'].max()}s")
         
         return events
     
@@ -136,16 +162,29 @@ class FIgLibSequenceBuilder:
             seq_dir = split_dir / seq_id
             seq_dir.mkdir(exist_ok=True)
             
-            # Copy frame files (in real implementation, these would be actual images)
+            # Copy real wildfire image files from FIgLib dataset
             frame_paths = []
             for frame_idx, frame in enumerate(seq['frames']):
-                src_path = self.raw_root / seq['event_id'] / frame['filename']
+                # Handle different path structures in real_figlib
+                relative_path = frame['relative_path']
+                if relative_path.startswith('Data/HPWREN-FIgLib/HPWREN-FIgLib-Data/'):
+                    # Path like: Data/HPWREN-FIgLib/HPWREN-FIgLib-Data/eventname/file.jpg
+                    # This is relative to the event directory, not the root
+                    src_path = self.raw_root / seq['event_id'] / relative_path
+                else:
+                    # Path like: eventname/eventname/file.jpg (relative to root)
+                    src_path = self.raw_root / relative_path
                 dst_path = seq_dir / f"frame_{frame_idx:02d}.jpg"
                 
-                # Copy file (placeholder in our case)
+                # Copy real wildfire image
                 if src_path.exists():
                     shutil.copy2(src_path, dst_path)
-                frame_paths.append(dst_path.relative_to(self.out_root))
+                    frame_paths.append(dst_path.relative_to(self.out_root))
+                else:
+                    logger.warning(f"Source image not found: {src_path} (from {frame['relative_path']})")
+                    # Create placeholder if source missing
+                    dst_path.write_text(f"# Missing: {frame['filename']}")
+                    frame_paths.append(dst_path.relative_to(self.out_root))
             
             # Record sequence metadata
             metadata_rows.append({
