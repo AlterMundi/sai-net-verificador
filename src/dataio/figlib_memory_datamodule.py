@@ -78,11 +78,15 @@ class FIgLibMemoryDataset(Dataset):
         with open(self.cache_index_path, 'r') as f:
             cache_index = json.load(f)
         
-        # Validate cache index
-        if self.split not in cache_index['splits']:
-            raise ValueError(f"Split '{self.split}' not found in cache index")
-        
-        return cache_index['splits'][self.split]
+        # Handle both individual split files and master index structure
+        if 'splits' in cache_index:
+            # Master cache index format
+            if self.split not in cache_index['splits']:
+                raise ValueError(f"Split '{self.split}' not found in cache index")
+            return cache_index['splits'][self.split]
+        else:
+            # Individual split file format - return as-is
+            return cache_index
     
     def _preload_all_sequences(self):
         """Preload all sequences into memory cache."""

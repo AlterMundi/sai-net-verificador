@@ -121,15 +121,36 @@ def main(config_path: str):
     
     # Setup sacred data module
     logger.info("Setting up sacred FIgLib data module...")
-    data_module = FIgLibDataModule(
-        data_root=config.data.data_root,
-        batch_size=config.training.batch_size,
-        num_workers=config.data.num_workers,
-        temporal_window=config.data.temporal_window,
-        tile_size=config.data.tile_size,
-        num_tiles=config.data.num_tiles,
-        pin_memory=config.data.pin_memory
-    )
+    
+    # Use Memory DataModule for H200 optimization if cache_dir is configured
+    if hasattr(config.data, 'cache_dir'):
+        logger.info("Using H200 Memory-Optimized DataModule...")
+        from src.dataio.figlib_memory_datamodule import FIgLibMemoryDataModule
+        data_module = FIgLibMemoryDataModule(
+            cache_dir=config.data.cache_dir,
+            batch_size=config.training.batch_size,
+            num_workers=config.data.num_workers,
+            temporal_window=config.data.temporal_window,
+            tile_size=config.data.tile_size,
+            num_tiles=config.data.num_tiles,
+            pin_memory=config.data.pin_memory,
+            persistent_workers=config.data.persistent_workers,
+            prefetch_factor=config.data.prefetch_factor,
+            use_memory_cache=config.data.use_memory_cache,
+            preload_all=config.data.preload_all,
+            max_cache_size_gb=config.data.max_cache_size_gb
+        )
+    else:
+        # Standard DataModule for regular configs
+        data_module = FIgLibDataModule(
+            data_root=config.data.data_root,
+            batch_size=config.training.batch_size,
+            num_workers=config.data.num_workers,
+            temporal_window=config.data.temporal_window,
+            tile_size=config.data.tile_size,
+            num_tiles=config.data.num_tiles,
+            pin_memory=config.data.pin_memory
+        )
     
     # Print dataset statistics
     try:
@@ -287,12 +308,25 @@ if __name__ == "__main__":
     
     # Check if data exists
     config = OmegaConf.load(args.config)
-    data_path = Path(config.data.data_root)
-    if not data_path.exists():
-        logger.error(f"Sacred dataset not found: {data_path}")
-        logger.error("Please run the dataset preparation scripts first:")
-        logger.error("1. python scripts/download_figlib.py")
-        logger.error("2. python scripts/build_figlib_sequences.py")
-        sys.exit(1)
+    
+    # Check cache directory for H200 config or data_root for standard config
+    if hasattr(config.data, 'cache_dir'):
+        # H200 memory-optimized config - check sequences in data/figlib_seq
+        data_path = Path("data/figlib_seq")
+        if not data_path.exists():
+            logger.error(f"Sacred dataset not found: {data_path}")
+            logger.error("Please run the dataset preparation scripts first:")
+            logger.error("1. python scripts/download_figlib.py")
+            logger.error("2. python scripts/build_figlib_sequences.py")
+            sys.exit(1)
+    else:
+        # Standard config uses data_root
+        data_path = Path(config.data.data_root)
+        if not data_path.exists():
+            logger.error(f"Sacred dataset not found: {data_path}")
+            logger.error("Please run the dataset preparation scripts first:")
+            logger.error("1. python scripts/download_figlib.py")
+            logger.error("2. python scripts/build_figlib_sequences.py")
+            sys.exit(1)
     
     main(args.config)

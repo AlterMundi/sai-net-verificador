@@ -83,7 +83,13 @@ sai-net-verificador/
 
 ### 1. Setup and Data Preparation
 ```bash
-# Download FIgLib dataset (creates placeholder structure)
+# Download REAL FIgLib dataset from sacred links (Objetivo Sagrado Puerta al Paraíso)
+python download_real_figlib.py \
+  --html_file docs/index.html \
+  --output data/real_figlib \
+  --max_downloads 10  # For testing, omit for full dataset (485 files)
+
+# Alternative: Download FIgLib dataset (creates placeholder structure)
 python scripts/download_figlib.py \
   --camera_list configs/figlib/cams.txt \
   --timestamps configs/figlib/timestamps.txt \
@@ -113,6 +119,9 @@ cd src/verifier && python smokeynet_like.py
 
 # Test memory datamodule only  
 cd src/dataio && python figlib_memory_datamodule.py
+
+# Analyze training results and recall performance
+python analyze_recall.py
 ```
 
 ### 3. Training (Sacred + H200 Optimized)
@@ -126,7 +135,10 @@ python train.py --config configs/smokeynet/train_config.yaml
 
 ### 4. Dependencies
 ```bash
-# Install required packages
+# Install from requirements.txt (recommended)
+pip install -r requirements.txt
+
+# Or install individually
 pip install torch torchvision pytorch-lightning torchmetrics \
             omegaconf albumentations opencv-python pandas \
             numpy pillow tqdm requests

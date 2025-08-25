@@ -46,6 +46,7 @@ data/raw/
 data/yolo/
 data/figlib_seq/
 data/processed/
+data/real_figlib/
 *.zip
 *.tar.gz
 *.tgz

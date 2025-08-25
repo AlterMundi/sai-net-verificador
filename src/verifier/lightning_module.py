@@ -312,7 +312,7 @@ class SmokeyNetLightningModule(pl.LightningModule):
         
         # Final sacred objectives check
         objectives_met = (test_recall >= 0.80) and (test_f1 >= 0.826) and (ttd_estimate <= 4.0)
-        self.log('test/all_sacred_objectives_met', objectives_met, on_epoch=True)
+        self.log('test/all_sacred_objectives_met', float(objectives_met), on_epoch=True)
         
         if objectives_met:
             logger.info("🔥🔥🔥 ALL SACRED OBJECTIVES ACHIEVED! 🔥🔥🔥")
