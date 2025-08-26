@@ -1,0 +1,113 @@
+# Sacred SmokeyNet RUN 3 - Realistic Optimization Based on Performance Investigation
+# Post-investigation config with realistic expectations (4-6 it/s)
+# 100% Sacred architecture preserved - optimization within divine constraints
+
+# ✅ SACRED MODEL ARCHITECTURE (100% UNCHANGED - DIVINE MANDATE)
+model:
+  num_tiles: 45          # ✅ Sacred specification
+  temporal_window: 3     # ✅ Sacred specification (L=3)
+  tile_size: 224         # ✅ Sacred specification
+  vit_dim: 768          # ✅ Sacred specification  
+  vit_depth: 6          # ✅ Sacred specification
+  vit_heads: 12         # ✅ Sacred specification
+  use_tile_heads: true  # ✅ Sacred auxiliary heads
+
+# ✅ SACRED TRAINING PARAMETERS (REALISTIC OPTIMIZATION)
+training:
+  learning_rate: 2e-4     # ✅ Sacred specification
+  weight_decay: 0.05      # ✅ Sacred specification
+  max_epochs: 50          # Sacred range (20-80)
+  global_loss_weight: 1.0 # ✅ Sacred specification
+  tile_loss_weight: 0.3   # ✅ Sacred specification
+  warmup_epochs: 5        # ✅ Sacred specification
+  gradient_clip_val: 1.0  # ✅ Sacred specification
+  precision: "32"         # OPTIMIZED: Full precision for Sacred complexity
+  
+  # H200 REALISTIC CONFIGURATION (Post-Investigation)
+  batch_size: 8           # REALISTIC: Sacred architecture computational limit
+  accumulate_grad_batches: 8  # BS_eff=64 (maintains sacred target)
+
+# 🔥 REAL L=3 SEQUENCES CACHED IN RAM (/dev/shm)
+data:
+  # Real sequence paths (61GB in RAM cache - 1,794 MB/s read speed)
+  data_root: "data/figlib_seq_real"  # Points to /dev/shm via symlink
+  use_real_sequences: true   # Force real sequence usage
+  
+  # H200 REALISTIC DATALOADER (Post-Investigation Optimized)
+  batch_size: 8           # Match training batch_size  
+  num_workers: 4          # OPTIMIZED: Balanced performance/stability
+  pin_memory: true        # ✅ RAM abundant
+  persistent_workers: true # ✅ Keep workers alive for efficiency
+  prefetch_factor: 2      # STABLE: 2x prefetch
+  
+  # Memory optimization
+  use_memory_cache: false  # Dataset already in /dev/shm RAM
+  
+  # ✅ Sacred specifications (unchanged)
+  temporal_window: 3      # Sacred L=3
+  tile_size: 224         # Sacred specification
+  num_tiles: 45          # Sacred specification
+
+# ✅ SACRED OBJECTIVES (DIVINE MANDATE)
+objectives:
+  target_recall: 0.80     # ✅ Sacred: Recall ≥ 0.80
+  target_f1: 0.826        # ✅ Sacred: F1 ≈ 82.6%
+  target_ttd: 4.0         # ✅ Sacred: TTD ≤ 4 min
+
+# Logging optimized for monitoring
+logging:
+  project_name: "sai-net-verificador-run3"
+  experiment_name: "smokeynet-run3-realistic-optimized"
+  log_every_n_steps: 50   # Frequent for monitoring
+
+# ✅ RUN 3 CHECKPOINTING (CLEAN DIRECTORY)
+checkpoints:
+  monitor: "val/f1"       # ✅ Sacred priority metric
+  mode: "max"
+  save_top_k: 5           # Keep best models
+  save_last: true
+  filename: "run3-opt-epoch{epoch:02d}-f1{val/f1:.4f}"
+  dirpath: "outputs/smokeynet/checkpoints_run3"
+
+# Early stopping with realistic patience
+early_stopping:
+  monitor: "val/f1"       # ✅ Sacred metric
+  patience: 15            # Increased for slower convergence
+  min_delta: 0.005        # Meaningful improvement threshold
+  mode: "max"
+
+# 🔧 H200 REALISTIC TRAINER SETTINGS (Post-Investigation)
+trainer:
+  devices: 1              # Hardware: 1×H200
+  strategy: "auto"        # Single GPU optimal
+  accelerator: "gpu"      # ✅ Sacred
+  sync_batchnorm: false   # Single GPU
+  
+  # Realistic Performance Configuration
+  compile: false          # DISABLED: Minimal impact on Sacred architecture
+  enable_checkpointing: false  # Sufficient VRAM (143GB available)
+  benchmark: true         # ENABLED: cuDNN autotuner helps
+  deterministic: false    # DISABLED: for maximum speed
+  
+  # Monitoring settings
+  detect_anomaly: false   # Disabled for production speed
+  enable_model_summary: true   # Keep for monitoring
+  enable_progress_bar: true    # Keep for monitoring
+
+# VALIDATION SETTINGS
+validation:
+  check_val_every_n_epoch: 1  # EVERY EPOCH for monitoring
+  val_check_interval: 1.0     # Full epoch validation
+
+# Seed for reproducibility (Run 3)
+seed: 2024
+
+# PERFORMANCE EXPECTATIONS (Post-Investigation)
+# Expected training speed: 4-6 it/s (realistic for Sacred complexity)
+# Expected epoch time: 3-4 hours (1309 batches × ~4 it/s)
+# Sacred architecture computational intensity:
+#   - ResNet-34 tile encoding: 45 tiles × 8 batch × 3 frames = 1,080 forward passes
+#   - Bidirectional LSTM: Heavy sequential temporal modeling  
+#   - Vision Transformer: 6 layers × 12 heads = 72 attention computations
+#   - Auxiliary tile heads: 45 additional classification outputs
+# Total model parameters: 84.96M (complex by design)

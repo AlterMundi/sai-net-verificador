@@ -1,0 +1,101 @@
+# PERFORMANCE DEBUGGING CONFIG - Sacred Architecture Preserved
+# Testing systematic bottleneck elimination
+
+# ✅ SACRED MODEL ARCHITECTURE (100% UNCHANGED)
+model:
+  num_tiles: 45          # ✅ Sacred specification
+  temporal_window: 3     # ✅ Sacred specification (L=3)
+  tile_size: 224         # ✅ Sacred specification
+  vit_dim: 768          # ✅ Sacred specification  
+  vit_depth: 6          # ✅ Sacred specification
+  vit_heads: 12         # ✅ Sacred specification
+  use_tile_heads: true  # ✅ Sacred auxiliary heads
+
+# ✅ SACRED TRAINING PARAMETERS (PRESERVED)
+training:
+  learning_rate: 2e-4     # ✅ Sacred specification
+  weight_decay: 0.05      # ✅ Sacred specification
+  max_epochs: 20          # SACRED: Minimum allowed
+  global_loss_weight: 1.0 # ✅ Sacred specification
+  tile_loss_weight: 0.3   # ✅ Sacred specification
+  warmup_epochs: 0        # DISABLED: For testing
+  gradient_clip_val: 1.0  # ✅ Sacred specification
+  precision: "32"         # TEST: Full precision (vs bf16-mixed)
+  
+  # H200 CONFIGURATION
+  batch_size: 8           # REDUCED: Test smaller batch impact
+  accumulate_grad_batches: 1  # SIMPLIFIED: For testing
+
+# 🔥 REAL L=3 SEQUENCES (IN RAM)
+data:
+  data_root: "data/figlib_seq_real"  # Points to RAM cache
+  use_real_sequences: true   # Force real sequence usage
+  
+  # RESTORED DATALOADER (workers help performance)
+  batch_size: 8           # REDUCED: Test smaller batch impact
+  num_workers: 4          # RESTORED: Workers help
+  pin_memory: true        # RESTORED: Helps performance
+  persistent_workers: false # DISABLED: Testing impact
+  prefetch_factor: 1      # REDUCED: Testing impact
+  
+  # Memory optimization
+  use_memory_cache: false  # Dataset already in RAM
+  
+  # ✅ Sacred specifications (unchanged)
+  temporal_window: 3      # Sacred L=3
+  tile_size: 224         # Sacred specification
+  num_tiles: 45          # Sacred specification
+
+# ✅ SACRED OBJECTIVES (PRESERVED)
+objectives:
+  target_recall: 0.80     # ✅ Sacred: Recall ≥ 0.80
+  target_f1: 0.826        # ✅ Sacred: F1 ≈ 82.6%
+  target_ttd: 4.0         # ✅ Sacred: TTD ≤ 4 min
+
+# Logging simplified for testing
+logging:
+  project_name: "sai-net-verificador-debug"
+  experiment_name: "performance-debug"
+  log_every_n_steps: 10   # Frequent for debugging
+
+# MINIMAL CHECKPOINTING
+checkpoints:
+  monitor: "val/f1"       # ✅ Sacred priority metric
+  mode: "max"
+  save_top_k: 1           # Minimal for testing
+  save_last: false        # Disabled for testing
+  filename: "debug-{epoch:02d}-{val/f1:.4f}"
+  dirpath: "outputs/smokeynet/debug"
+
+# DISABLED EARLY STOPPING
+early_stopping:
+  monitor: "val/f1"       # ✅ Sacred metric
+  patience: 1000          # Effectively disabled
+  min_delta: 0.001        
+  mode: "max"
+
+# 🔧 PERFORMANCE DEBUGGING TRAINER SETTINGS
+trainer:
+  devices: 1              # Hardware: 1×H200
+  strategy: "auto"        # Single GPU optimal
+  accelerator: "gpu"      # ✅ Sacred
+  sync_batchnorm: false   # Single GPU
+  
+  # 🚨 PRIMARY TEST: DISABLE TORCH.COMPILE
+  compile: false          # DISABLED: Testing primary suspect
+  enable_checkpointing: false  # Sufficient VRAM
+  benchmark: false        # DISABLED: Testing cuDNN impact
+  deterministic: false    # DISABLED: for maximum speed
+  
+  # Monitoring optimizations
+  detect_anomaly: false   # Disabled for production speed
+  enable_model_summary: false  # Disabled for testing
+  enable_progress_bar: true    # Keep for monitoring
+
+# VALIDATION SETTINGS
+validation:
+  check_val_every_n_epoch: 1  # Every epoch for monitoring
+  val_check_interval: 1.0     # Full epoch validation
+
+# Seed for reproducibility
+seed: 2024
